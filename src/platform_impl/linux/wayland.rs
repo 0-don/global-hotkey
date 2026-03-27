@@ -120,8 +120,15 @@ async fn rebind_all(
     Ok(())
 }
 
-#[tokio::main(flavor = "current_thread")]
-pub async fn events_processor(thread_rx: Receiver<ThreadMessage>) -> Result<(), String> {
+pub fn events_processor(thread_rx: Receiver<ThreadMessage>) -> Result<(), String> {
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|e| format!("Failed to create tokio runtime: {e}"))?;
+    rt.block_on(events_processor_async(thread_rx))
+}
+
+async fn events_processor_async(thread_rx: Receiver<ThreadMessage>) -> Result<(), String> {
     let mut registered_hotkeys = HashMap::<u32, HotKey>::new();
     let mut hotkey_pressed = HashMap::<u32, bool>::new();
 
